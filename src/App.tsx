@@ -2,7 +2,7 @@ import { BrowserRouter, Routes } from "react-router-dom";
 import { Provider } from "react-redux";
 import { generateRoutes, routes } from "./router";
 import AuthInitializer from "./pages/Users/_components/AuthInitializer";
-import store from "./pages/Users/store";
+import store from "./pages/store";
 
 function App() {
   return (

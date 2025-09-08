@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { loginUser, clearError } from './slice';
-import type { AppDispatch } from '../store';
+import type { AppDispatch } from '../../store';
 
 type LoginForm = {
     email: string;

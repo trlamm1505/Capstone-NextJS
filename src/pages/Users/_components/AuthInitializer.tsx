@@ -2,7 +2,7 @@ import React, { useEffect } from "react";
 import { useDispatch } from "react-redux";
 import { setAuthenticated } from "../LoginPage/slice";
 import sessionManager from "../../../utils/session";
-import type { AppDispatch } from "../store";
+import type { AppDispatch } from "../../store";
 
 type Props = {
     children: React.ReactNode;

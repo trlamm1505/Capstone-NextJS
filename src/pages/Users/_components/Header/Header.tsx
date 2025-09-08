@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Webhook, User } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
-import type { AppDispatch } from "../../store";
+import type { AppDispatch } from "../../../store";
 import { logout } from "../../LoginPage/slice";
 import { useLocation } from "react-router-dom";
 
