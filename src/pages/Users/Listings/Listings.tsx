@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import type { AppDispatch } from '../store';
+import type { AppDispatch } from '../../store';
 import { fetchRoomsByLocation } from './slice';
 
 export default function Listings() {

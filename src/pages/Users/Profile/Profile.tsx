@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import type { AppDispatch, RootState } from "../store";
+import type { AppDispatch, RootState } from "../../store";
 import { fetchProfile, updateProfile } from "./slice";
 import { setAuthenticated } from "../LoginPage/slice";
 import api from "../../../services/api";

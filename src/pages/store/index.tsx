@@ -1,10 +1,10 @@
 import { configureStore } from "@reduxjs/toolkit";
-import locationReducer from "../HomePage/slice";
-import registerReducer from "../RegisterPage/slice";
-import loginReducer from "../LoginPage/slice";
-import listingsReducer from "../Listings/slice";
-import roomDetailReducer from "../RoomDetail/slice";
-import profileReducer from "../Profile/slice";
+import locationReducer from "../Users/HomePage/slice";
+import registerReducer from "../Users/RegisterPage/slice";
+import loginReducer from "../Users/LoginPage/slice";
+import listingsReducer from "../Users/Listings/slice";
+import roomDetailReducer from "../Users/RoomDetail/slice";
+import profileReducer from "../Users/Profile/slice";
 
 export const store = configureStore({
     reducer: {

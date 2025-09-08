@@ -1,7 +1,7 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Search, MapPin, Calendar, Users, X } from "lucide-react";
-import type { AppDispatch, RootState } from "../store";
+import type { AppDispatch, RootState } from "../../store";
 import { useNavigate } from "react-router-dom";
 import {
     setSearchQuery,
@@ -28,7 +28,6 @@ export default function HomePage() {
         suggestions,
         showSuggestions,
         loading,
-        error,
         featured,
     } = useSelector((state: RootState) => state.location);
 
@@ -40,13 +39,7 @@ export default function HomePage() {
     });
     const [suppressSearch, setSuppressSearch] = useState(false);
     const locationInputRef = useRef<HTMLInputElement | null>(null);
-    const [isMobile, setIsMobile] = useState<boolean>(typeof window !== "undefined" ? window.innerWidth < 640 : false);
 
-    useEffect(() => {
-        const handleResize = () => setIsMobile(window.innerWidth < 640);
-        window.addEventListener("resize", handleResize);
-        return () => window.removeEventListener("resize", handleResize);
-    }, []);
 
     // Debounced search effect
     useEffect(() => {
@@ -99,9 +92,6 @@ export default function HomePage() {
         setSearchData(prev => ({ ...prev, location: "" }));
     };
 
-    const closeSuggestions = () => {
-        dispatch(setShowSuggestions(false));
-    };
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { registerUser, clearError, clearSuccess, checkEmailExists, resetEmailCheck } from './slice';
-import type { AppDispatch } from '../store';
+import type { AppDispatch } from '../../store';
 
 // Form types
 interface RegisterForm {
