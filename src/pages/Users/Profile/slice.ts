@@ -1,7 +1,7 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import type { PayloadAction } from "@reduxjs/toolkit";
 import api from "../../../services/api";
-import type { RootState } from "../store";
+import type { RootState } from "../../store";
 
 export type Profile = {
     id: number;

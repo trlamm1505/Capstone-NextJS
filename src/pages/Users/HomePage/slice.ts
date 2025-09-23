@@ -86,7 +86,7 @@ export const fetchFeaturedLocations = createAsyncThunk(
 // Async thunk to search locations by query using paginated API
 export const searchLocations = createAsyncThunk(
     "location/searchLocations",
-    async (query: string, { getState, rejectWithValue }) => {
+    async (query: string, { rejectWithValue }) => {
         try {
             const keyword = query.trim();
             if (keyword.length === 0) {

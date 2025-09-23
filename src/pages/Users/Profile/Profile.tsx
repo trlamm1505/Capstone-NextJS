@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import type { AppDispatch, RootState } from "../../store";
 import { fetchProfile, updateProfile } from "./slice";
@@ -90,7 +90,7 @@ export default function Profile() {
               const r = await api.get(`/phong-thue/${rid}`);
               const content = (r?.data?.content ?? r?.data) as Room;
               if (content?.id) roomMap[content.id] = content;
-            } catch {}
+            } catch { }
           })
         );
         setBookings(inverted.map((b) => ({ ...b, room: roomMap[b.maPhong] })));
@@ -208,9 +208,9 @@ export default function Profile() {
                                 "auth_user",
                                 JSON.stringify(updated)
                               );
-                            } catch {}
-                          } catch {}
-                        } catch {}
+                            } catch { }
+                          } catch { }
+                        } catch { }
                       }}
                     />
                   </label>
@@ -353,8 +353,8 @@ export default function Profile() {
                     {profile?.gender === true
                       ? "Nam"
                       : profile?.gender === false
-                      ? "Nữ"
-                      : ""}
+                        ? "Nữ"
+                        : ""}
                   </div>
                 )}
               </div>
@@ -385,7 +385,7 @@ export default function Profile() {
                               );
                               return;
                             }
-                          } catch {}
+                          } catch { }
                         }
                         const pad = (n: string | number) =>
                           String(n).padStart(2, "0");
