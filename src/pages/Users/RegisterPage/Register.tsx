@@ -21,7 +21,7 @@ interface FormErrors {
     soDT?: string;
 }
 
-type RegisterSliceState = { loading: boolean; error: string | null; success: boolean };
+
 
 function Register() {
     const dispatch = useDispatch<AppDispatch>();
