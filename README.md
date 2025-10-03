@@ -1,69 +1,86 @@
-# React + TypeScript + Vite
+# Capstone NextJS - Airbnb Clone
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Dự án Capstone NextJS - Ứng dụng đặt phòng trực tuyến tương tự Airbnb
 
-Currently, two official plugins are available:
+## Tác giả
+**Sơn Lê**
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Phiên bản
+**1.0.0**
 
-## Expanding the ESLint configuration
+## Công nghệ sử dụng
+- **React 19.1.0** - UI Framework
+- **TypeScript** - Type Safety
+- **Vite** - Build Tool
+- **Redux Toolkit** - State Management
+- **React Router DOM** - Routing
+- **Tailwind CSS** - Styling
+- **Axios** - HTTP Client
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## Tính năng chính
+- ✅ Đăng nhập/Đăng ký người dùng
+- ✅ Tìm kiếm và lọc phòng
+- ✅ Chi tiết phòng
+- ✅ Đặt phòng
+- ✅ Quản lý profile
+- ✅ Responsive Design
 
-```js
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+## Cài đặt và chạy dự án
 
-      // Remove tseslint.configs.recommended and replace with this
-      ...tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      ...tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      ...tseslint.configs.stylisticTypeChecked,
+### Yêu cầu hệ thống
+- Node.js >= 18.0.0
+- npm hoặc yarn
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+### Cài đặt dependencies
+```bash
+npm install
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+### Chạy development server
+```bash
+npm run dev
 ```
+
+### Build cho production
+```bash
+npm run build
+```
+
+### Preview build
+```bash
+npm run preview
+```
+
+## Cấu trúc dự án
+```
+src/
+├── pages/           # Các trang chính
+│   ├── Users/       # Trang người dùng
+│   └── Admin/       # Trang quản trị
+├── services/        # API services
+├── router/          # Routing configuration
+├── utils/           # Utility functions
+└── assets/          # Static assets
+```
+
+## API Configuration
+Dự án sử dụng API từ Cybersoft:
+- Base URL: `https://airbnbnew.cybersoft.edu.vn/api`
+- Authentication: JWT Token
+
+## Deployment
+Dự án được tối ưu cho deployment với:
+- Code splitting
+- Tree shaking
+- Minification
+- Environment variables support
+
+## Changelog
+
+### v1.0.0 (2024-12-19)
+- ✅ Khởi tạo dự án
+- ✅ Cấu hình Vite và TypeScript
+- ✅ Setup Redux Toolkit
+- ✅ Implement authentication
+- ✅ Tối ưu hóa cho deployment
+- ✅ Cải thiện error handling
