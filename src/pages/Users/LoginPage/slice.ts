@@ -37,30 +37,8 @@ export const loginUser = createAsyncThunk<
             return res.data;
         } catch (err) {
             const error = err as AxiosError<any>;
-            console.error('Login error:', error);
-
-            // Xử lý các loại lỗi khác nhau
-            if (!error.response) {
-                return rejectWithValue("Không thể kết nối đến server. Vui lòng kiểm tra kết nối mạng.");
-            }
-
             const data = error.response?.data as any;
-            let message = "Đăng nhập thất bại";
-
-            if (data?.content) {
-                message = data.content;
-            } else if (data?.message) {
-                message = data.message;
-            } else if (typeof data === "string") {
-                message = data;
-            } else if (error.response.status === 401) {
-                message = "Email hoặc mật khẩu không đúng";
-            } else if (error.response.status === 403) {
-                message = "Tài khoản bị khóa hoặc không có quyền truy cập";
-            } else if (error.response.status >= 500) {
-                message = "Lỗi server. Vui lòng thử lại sau.";
-            }
-
+            const message = data?.content || data?.message || (typeof data === "string" ? data : undefined) || error.message || "Đăng nhập thất bại";
             return rejectWithValue(message);
         }
     }
@@ -82,7 +60,11 @@ const loginSlice = createSlice({
                 localStorage.removeItem('auth_isAuthenticated');
                 localStorage.removeItem('accessToken');
                 localStorage.removeItem('lastActivity');
-            } catch { }
+                // Clear any other auth-related data
+                localStorage.removeItem('pendingBooking');
+            } catch (error) {
+                console.error('Error clearing auth data:', error);
+            }
         },
         setAuthenticated: (state, action: PayloadAction<AuthUser | null>) => {
             state.user = action.payload;
@@ -115,12 +97,17 @@ const loginSlice = createSlice({
                         localStorage.setItem('auth_user', JSON.stringify(user));
                         localStorage.setItem('auth_isAuthenticated', 'true');
                         if (token) localStorage.setItem('accessToken', token);
+                        // Set initial activity time for session management
+                        localStorage.setItem('lastActivity', Date.now().toString());
                     } else {
                         localStorage.removeItem('auth_user');
                         localStorage.removeItem('auth_isAuthenticated');
                         localStorage.removeItem('accessToken');
+                        localStorage.removeItem('lastActivity');
                     }
-                } catch { }
+                } catch (error) {
+                    console.error('Error saving auth data to localStorage:', error);
+                }
             })
             .addCase(loginUser.rejected, (state, action: PayloadAction<string | undefined>) => {
                 state.loading = false;
