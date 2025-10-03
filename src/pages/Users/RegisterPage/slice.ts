@@ -72,28 +72,17 @@ export const registerUser = createAsyncThunk<
             return response.data;
         } catch (err) {
             const error = err as AxiosError<any>;
-            console.error('Register error:', error);
-
-            // Xử lý các loại lỗi khác nhau
-            if (!error.response) {
-                return rejectWithValue("Không thể kết nối đến server. Vui lòng kiểm tra kết nối mạng.");
-            }
-
             let errorMessage = "Đăng ký thất bại";
-            const data = error.response?.data as any;
 
+            const data = error.response?.data as any;
             if (data?.content) {
                 errorMessage = data.content;
             } else if (data?.message) {
                 errorMessage = data.message;
             } else if (typeof data === "string") {
                 errorMessage = data;
-            } else if (error.response.status === 400) {
-                errorMessage = "Thông tin không hợp lệ. Vui lòng kiểm tra lại.";
-            } else if (error.response.status === 409) {
-                errorMessage = "Email đã tồn tại trong hệ thống";
-            } else if (error.response.status >= 500) {
-                errorMessage = "Lỗi server. Vui lòng thử lại sau.";
+            } else if (error.message) {
+                errorMessage = error.message;
             }
 
             return rejectWithValue(errorMessage);

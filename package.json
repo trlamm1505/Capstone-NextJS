@@ -1,8 +1,7 @@
 {
   "name": "capstone",
   "private": true,
-  "version": "1.0.0",
-  "author": "Sơn Lê",
+  "version": "0.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",

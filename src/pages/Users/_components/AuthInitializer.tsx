@@ -15,30 +15,48 @@ export default function AuthInitializer({ children }: Props) {
         // Initialize session manager early so we can validate before rehydrating
         try {
             sessionManager.setStore(window.__REDUX_STORE__ as any);
-            sessionManager.initSession();
         } catch { }
 
-        // Rehydrate auth from localStorage only if session still valid
+        // Rehydrate auth from localStorage
         try {
-            if (sessionManager.isSessionValid()) {
-                const isAuth = localStorage.getItem('auth_isAuthenticated') === 'true';
-                const userRaw = localStorage.getItem('auth_user');
-                const token = localStorage.getItem('accessToken');
+            const isAuth = localStorage.getItem('auth_isAuthenticated') === 'true';
+            const userRaw = localStorage.getItem('auth_user');
+            const token = localStorage.getItem('accessToken');
+
+            if (isAuth && userRaw) {
                 let user: any = null;
-                if (userRaw) {
+                try {
                     user = JSON.parse(userRaw);
                     if (token && !user.token) user.token = token;
+                } catch (parseError) {
+                    console.error('Error parsing user data:', parseError);
+                    // Clear corrupted data
+                    localStorage.removeItem('auth_user');
+                    localStorage.removeItem('auth_isAuthenticated');
+                    localStorage.removeItem('accessToken');
+                    return;
                 }
-                if (isAuth && user) {
-                    dispatch(setAuthenticated(user));
-                }
+
+                // Set user in Redux store
+                dispatch(setAuthenticated(user));
+
+                // Initialize session after setting user
+                sessionManager.initSession();
             } else {
-                // If session invalid, clear persisted auth to enforce logout
+                // No auth data, clear any remnants
                 localStorage.removeItem('auth_user');
                 localStorage.removeItem('auth_isAuthenticated');
                 localStorage.removeItem('accessToken');
+                localStorage.removeItem('lastActivity');
             }
-        } catch { }
+        } catch (error) {
+            console.error('Error initializing auth:', error);
+            // Clear all auth data on error
+            localStorage.removeItem('auth_user');
+            localStorage.removeItem('auth_isAuthenticated');
+            localStorage.removeItem('accessToken');
+            localStorage.removeItem('lastActivity');
+        }
     }, [dispatch]);
 
     return <>{children}</>;

@@ -69,7 +69,31 @@ export const fetchProfile = createAsyncThunk<
                 createdAt: me?.createdAt,
             };
         } catch (e: any) {
-            return rejectWithValue(e?.response?.data?.message || e?.message || "Không tải được hồ sơ");
+            console.error('Fetch profile error:', e);
+
+            // Xử lý các loại lỗi khác nhau
+            if (!e.response) {
+                return rejectWithValue("Không thể kết nối đến server. Vui lòng kiểm tra kết nối mạng.");
+            }
+
+            const data = e.response?.data as any;
+            let message = "Không tải được hồ sơ";
+
+            if (data?.content) {
+                message = data.content;
+            } else if (data?.message) {
+                message = data.message;
+            } else if (typeof data === "string") {
+                message = data;
+            } else if (e.response.status === 401) {
+                message = "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.";
+            } else if (e.response.status === 403) {
+                message = "Không có quyền truy cập thông tin này.";
+            } else if (e.response.status >= 500) {
+                message = "Lỗi server. Vui lòng thử lại sau.";
+            }
+
+            return rejectWithValue(message);
         }
     }
 );
@@ -97,7 +121,35 @@ export const updateProfile = createAsyncThunk<
                 createdAt: content?.createdAt,
             };
         } catch (e: any) {
-            return rejectWithValue(e?.response?.data?.message || e?.message || "Cập nhật hồ sơ thất bại");
+            console.error('Update profile error:', e);
+
+            // Xử lý các loại lỗi khác nhau
+            if (!e.response) {
+                return rejectWithValue("Không thể kết nối đến server. Vui lòng kiểm tra kết nối mạng.");
+            }
+
+            const data = e.response?.data as any;
+            let message = "Cập nhật hồ sơ thất bại";
+
+            if (data?.content) {
+                message = data.content;
+            } else if (data?.message) {
+                message = data.message;
+            } else if (typeof data === "string") {
+                message = data;
+            } else if (e.response.status === 400) {
+                message = "Thông tin không hợp lệ. Vui lòng kiểm tra lại.";
+            } else if (e.response.status === 401) {
+                message = "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.";
+            } else if (e.response.status === 403) {
+                message = "Không có quyền cập nhật thông tin này.";
+            } else if (e.response.status === 409) {
+                message = "Email đã được sử dụng bởi tài khoản khác.";
+            } else if (e.response.status >= 500) {
+                message = "Lỗi server. Vui lòng thử lại sau.";
+            }
+
+            return rejectWithValue(message);
         }
     }
 );

@@ -41,11 +41,13 @@ export default function Profile() {
     []
   );
   const [loadingBookings, setLoadingBookings] = useState<boolean>(false);
+  const [showAllBookings, setShowAllBookings] = useState<boolean>(false);
   const leftRef = useRef<HTMLDivElement | null>(null);
   const [rightMaxHeight, setRightMaxHeight] = useState<number | undefined>(
     undefined
   );
   const [isEditing, setIsEditing] = useState<boolean>(false);
+  const [isUpdating, setIsUpdating] = useState<boolean>(false);
   const [form, setForm] = useState<{
     email?: string;
     phone?: string;
@@ -64,8 +66,8 @@ export default function Profile() {
     console.log("Redux profile state:", { profile, loading, error });
     console.log("Redux login state:", loginState);
 
-    // Only fetch profile once when component mounts
-    if (!profile && !loading) {
+    // Only fetch profile once when component mounts and user is authenticated
+    if (!profile && !loading && (authUser || loginState?.isAuthenticated)) {
       console.log("Dispatching fetchProfile...");
       dispatch(fetchProfile());
     }
@@ -78,28 +80,59 @@ export default function Profile() {
       try {
         const res = await api.get(`/dat-phong/lay-theo-nguoi-dung/${userId}`);
         const mine = (res?.data?.content ?? []) as Booking[];
-        // Invert original API order: last item should appear first
-        const inverted = [...mine].reverse();
-        const uniqueRoomIds = Array.from(
-          new Set(inverted.map((b) => b.maPhong))
-        );
+        console.log('Raw bookings from API:', mine);
+
+        // Tạo Map để lưu booking mới nhất cho mỗi phòng
+        const roomBookingMap = new Map<number, Booking>();
+
+        let processedBookings: Booking[];
+
+        if (showAllBookings) {
+          // Hiển thị tất cả bookings, sắp xếp theo ngày mới nhất
+          processedBookings = [...mine].sort((a, b) => new Date(b.ngayDen).getTime() - new Date(a.ngayDen).getTime());
+        } else {
+          // Chỉ hiển thị booking mới nhất cho mỗi phòng
+          mine.forEach((booking) => {
+            const roomId = booking.maPhong;
+            const existingBooking = roomBookingMap.get(roomId);
+
+            if (!existingBooking || new Date(booking.ngayDen) > new Date(existingBooking.ngayDen)) {
+              roomBookingMap.set(roomId, booking);
+            }
+          });
+
+          processedBookings = Array.from(roomBookingMap.values())
+            .sort((a, b) => new Date(b.ngayDen).getTime() - new Date(a.ngayDen).getTime());
+        }
+
+        console.log('Processed bookings:', processedBookings);
+
+        // Lấy danh sách room IDs từ processed bookings
+        const roomIds = Array.from(new Set(processedBookings.map(b => b.maPhong)));
         const roomMap: Record<number, Room> = {};
+
         await Promise.all(
-          uniqueRoomIds.map(async (rid) => {
+          roomIds.map(async (rid) => {
             try {
               const r = await api.get(`/phong-thue/${rid}`);
               const content = (r?.data?.content ?? r?.data) as Room;
               if (content?.id) roomMap[content.id] = content;
-            } catch { }
+            } catch (err) {
+              console.error(`Error loading room ${rid}:`, err);
+            }
           })
         );
-        setBookings(inverted.map((b) => ({ ...b, room: roomMap[b.maPhong] })));
+
+        setBookings(processedBookings.map((b) => ({ ...b, room: roomMap[b.maPhong] })));
+      } catch (err) {
+        console.error('Error loading bookings:', err);
+        setBookings([]);
       } finally {
         setLoadingBookings(false);
       }
     };
     load();
-  }, [userId]);
+  }, [userId, showAllBookings]);
 
   // Sync right panel max height with left panel height on desktop
   useEffect(() => {
@@ -173,6 +206,19 @@ export default function Profile() {
                       onChange={async (e) => {
                         const file = e.target.files?.[0];
                         if (!file) return;
+
+                        // Validate file size (max 5MB)
+                        if (file.size > 5 * 1024 * 1024) {
+                          alert("Kích thước file quá lớn. Vui lòng chọn file nhỏ hơn 5MB.");
+                          return;
+                        }
+
+                        // Validate file type
+                        if (!file.type.startsWith('image/')) {
+                          alert("Vui lòng chọn file hình ảnh.");
+                          return;
+                        }
+
                         try {
                           const fd = new FormData();
                           fd.append("formFile", file);
@@ -208,9 +254,16 @@ export default function Profile() {
                                 "auth_user",
                                 JSON.stringify(updated)
                               );
-                            } catch { }
-                          } catch { }
-                        } catch { }
+                            } catch (err) {
+                              console.error('Error saving to localStorage:', err);
+                            }
+                          } catch (err) {
+                            console.error('Error updating user info:', err);
+                          }
+                        } catch (err) {
+                          console.error('Error uploading avatar:', err);
+                          alert("Lỗi khi tải lên ảnh đại diện. Vui lòng thử lại.");
+                        }
                       }}
                     />
                   </label>
@@ -363,7 +416,8 @@ export default function Profile() {
                 {isEditing ? (
                   <div className="flex gap-2">
                     <button
-                      className="rounded-lg bg-rose-500 text-white px-4 py-2"
+                      className="rounded-lg bg-rose-500 text-white px-4 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                      disabled={isUpdating}
                       onClick={async () => {
                         if (!userId) return;
                         // Email duplicate check if changed
@@ -385,7 +439,11 @@ export default function Profile() {
                               );
                               return;
                             }
-                          } catch { }
+                          } catch (err) {
+                            console.error('Error checking email:', err);
+                            alert("Không thể kiểm tra email. Vui lòng thử lại.");
+                            return;
+                          }
                         }
                         const pad = (n: string | number) =>
                           String(n).padStart(2, "0");
@@ -393,19 +451,28 @@ export default function Profile() {
                           birthY && birthM && birthD
                             ? `${birthY}-${pad(birthM)}-${pad(birthD)}`
                             : form.birthday;
-                        await dispatch(
-                          updateProfile({
-                            id: Number(userId),
-                            email: form.email,
-                            phone: form.phone,
-                            birthday: composedBirthday,
-                            gender: form.gender,
-                          }) as any
-                        );
-                        setIsEditing(false);
+                        setIsUpdating(true);
+                        try {
+                          await dispatch(
+                            updateProfile({
+                              id: Number(userId),
+                              email: form.email,
+                              phone: form.phone,
+                              birthday: composedBirthday,
+                              gender: form.gender,
+                            }) as any
+                          );
+                          setIsEditing(false);
+                          alert("Cập nhật hồ sơ thành công!");
+                        } catch (err) {
+                          console.error('Error updating profile:', err);
+                          alert("Lỗi khi cập nhật hồ sơ. Vui lòng thử lại.");
+                        } finally {
+                          setIsUpdating(false);
+                        }
                       }}
                     >
-                      Lưu
+                      {isUpdating ? "Đang lưu..." : "Lưu"}
                     </button>
                     <button
                       className="rounded-lg border px-4 py-2"
@@ -454,7 +521,19 @@ export default function Profile() {
               overflowY: rightMaxHeight ? ("auto" as const) : undefined,
             }}
           >
-            <h2 className="font-semibold mb-3">Phòng đã thuê</h2>
+            <div className="flex justify-between items-center mb-3">
+              <h2 className="font-semibold">
+                Phòng đã thuê ({bookings.length})
+              </h2>
+              {bookings.length > 0 && (
+                <button
+                  onClick={() => setShowAllBookings(!showAllBookings)}
+                  className="text-sm text-blue-600 hover:text-blue-800 underline"
+                >
+                  {showAllBookings ? 'Chỉ hiển thị phòng duy nhất' : 'Hiển thị tất cả lịch sử'}
+                </button>
+              )}
+            </div>
             {loadingBookings && <div>Đang tải...</div>}
             {!loadingBookings && bookings.length === 0 && (
               <div className="text-gray-500">Chưa có đặt phòng nào.</div>
