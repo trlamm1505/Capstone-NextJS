@@ -37,8 +37,30 @@ export const loginUser = createAsyncThunk<
             return res.data;
         } catch (err) {
             const error = err as AxiosError<any>;
+            console.error('Login error:', error);
+
+            // Xử lý các loại lỗi khác nhau
+            if (!error.response) {
+                return rejectWithValue("Không thể kết nối đến server. Vui lòng kiểm tra kết nối mạng.");
+            }
+
             const data = error.response?.data as any;
-            const message = data?.content || data?.message || (typeof data === "string" ? data : undefined) || error.message || "Đăng nhập thất bại";
+            let message = "Đăng nhập thất bại";
+
+            if (data?.content) {
+                message = data.content;
+            } else if (data?.message) {
+                message = data.message;
+            } else if (typeof data === "string") {
+                message = data;
+            } else if (error.response.status === 401) {
+                message = "Email hoặc mật khẩu không đúng";
+            } else if (error.response.status === 403) {
+                message = "Tài khoản bị khóa hoặc không có quyền truy cập";
+            } else if (error.response.status >= 500) {
+                message = "Lỗi server. Vui lòng thử lại sau.";
+            }
+
             return rejectWithValue(message);
         }
     }
