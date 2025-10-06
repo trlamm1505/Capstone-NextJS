@@ -6,6 +6,15 @@ import listingsReducer from "../Users/Listings/slice";
 import roomDetailReducer from "../Users/RoomDetail/slice";
 import profileReducer from "../Users/Profile/slice";
 
+import loginAdmReducer from "../Admin/LoginPage/slice";
+import admRoomsReducer from "../Admin/RoomsManagement/Rooms/slice";
+import admRoomReducer from "../Admin/RoomsManagement/AddRoom/slice";
+import admEditRoomReducer from "../Admin/RoomsManagement/EditRoom/slice";
+import admDetailRoomReducer from "../Admin/RoomsManagement/EditRoom/slice";
+import usersAdminReducer from "../Admin/UsersManagement/Users/slice";
+import admBookRoom from "../Admin/RoomsManagement/BookRoom/slice";
+import admLocations from "../Admin/LocationsManagment/Locations/slice";
+
 export const store = configureStore({
     reducer: {
         location: locationReducer,
@@ -14,6 +23,15 @@ export const store = configureStore({
         listings: listingsReducer,
         roomDetail: roomDetailReducer,
         profile: profileReducer,
+
+        loginAdm: loginAdmReducer,
+        admRooms: admRoomsReducer,
+        admRoom: admRoomReducer,
+        admEditRoom: admEditRoomReducer,
+        admDetailRoom: admDetailRoomReducer,
+        admUsers: usersAdminReducer,
+        admBookRoom: admBookRoom,
+        admLocations: admLocations
     },
     middleware: (getDefaultMiddleware) =>
         getDefaultMiddleware({

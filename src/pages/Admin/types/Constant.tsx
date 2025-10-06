@@ -1,0 +1,5 @@
+export const THEM_MOI = 'themmoi'
+export const SUA = 'sua'
+export const CHI_TIET = 'chitiet'
+export const ADMIN = 'ADMIN'
+export const USER = 'USER'

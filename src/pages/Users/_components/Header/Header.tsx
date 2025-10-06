@@ -3,7 +3,7 @@ import { Webhook, User } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import type { AppDispatch } from "../../../store";
 import { logout } from "../../LoginPage/slice";
-import { useLocation } from "react-router-dom";
+import { NavLink, useLocation } from "react-router-dom";
 
 type NavItem = {
     label: string;
@@ -96,8 +96,10 @@ export default function Header({
                         </div>
                     ) : (
                         <>
-                            <a href={`/dangnhap${redirectQuery}`} className={`rounded-full border px-6 py-3 text-base font-semibold ${isLight ? "border-black/20 hover:bg-black/5" : "border-white/20 hover:bg-white/10"}`}>Đăng nhập</a>
-                            <a href={`/dangky${redirectQuery}`} className="rounded-full bg-rose-500 px-6 py-3 text-base font-semibold text-white hover:bg-rose-600">Đăng ký</a>
+                        <NavLink to={`/dangnhap${redirectQuery}`} key={`/dangnhap${redirectQuery}`} className={`rounded-full border px-6 py-3 text-base font-semibold ${isLight ? "border-black/20 hover:bg-black/5" : "border-white/20 hover:bg-white/10"}`}>Đăng nhập</NavLink>
+                        <NavLink to={`/dangky${redirectQuery}`} key={`/dangky${redirectQuery}`} className="rounded-full bg-rose-500 px-6 py-3 text-base font-semibold text-white hover:bg-rose-600">Đăng ký</NavLink>
+    {/* <a href={`/dangnhap${redirectQuery}`} className={`rounded-full border px-6 py-3 text-base font-semibold ${isLight ? "border-black/20 hover:bg-black/5" : "border-white/20 hover:bg-white/10"}`}>Đăng nhập</a> */}
+                            {/* <a href={`/dangky${redirectQuery}`} className="rounded-full bg-rose-500 px-6 py-3 text-base font-semibold text-white hover:bg-rose-600">Đăng ký</a> */}
                         </>
                     )}
                 </div>
