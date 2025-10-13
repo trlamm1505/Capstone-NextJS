@@ -11,14 +11,20 @@ export default function Listings() {
     const city = params.get('city') || '';
     const checkIn = params.get('checkIn') || '';
     const checkOut = params.get('checkOut') || '';
+    const guests = params.get('guests') || '';
     const dispatch = useDispatch<AppDispatch>();
     const { rooms, loading, error } = useSelector((s: any) => s.listings);
 
     useEffect(() => {
         if (maViTri) {
-            dispatch(fetchRoomsByLocation(Number(maViTri)));
+            dispatch(fetchRoomsByLocation({ 
+                maViTri: Number(maViTri), 
+                checkIn, 
+                checkOut, 
+                guests 
+            }));
         }
-    }, [maViTri, dispatch]);
+    }, [maViTri, checkIn, checkOut, guests, dispatch]);
 
     const mapQuery = encodeURIComponent(city || 'Việt Nam');
     const mapUrl = `https://www.google.com/maps?q=${mapQuery}&hl=vi&z=12&output=embed`;
@@ -35,7 +41,7 @@ export default function Listings() {
                     <div className="mb-1 text-sm text-gray-500">
                         {rooms.length > 0 && (
                             <>
-                                Hơn {rooms.length} chỗ •{checkIn && checkOut ? ` ${checkIn} - ${checkOut}` : ''}
+                                Hơn {rooms.length} chỗ •{checkIn && checkOut ? ` ${checkIn} - ${checkOut}` : ''}{guests ? ` • ${guests} khách` : ''}
                             </>
                         )}
                     </div>
@@ -62,7 +68,7 @@ export default function Listings() {
                             className="flex flex-col lg:flex-row gap-3 lg:gap-4 rounded-2xl border p-3 lg:p-4 bg-white cursor-pointer hover:shadow-md transition"
                             onClick={() =>
                                 navigate(`/chi-tiet-phong/${room.id}` as const, {
-                                    state: { room, city, checkIn, checkOut },
+                                    state: { room, city, checkIn, checkOut, guests },
                                 })
                             }
                         >

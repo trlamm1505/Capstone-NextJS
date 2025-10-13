@@ -27,15 +27,55 @@ const initialState: ListingsState = {
     rooms: [],
 };
 
+// Hàm kiểm tra xem phòng có bị trùng lịch không
+const isRoomAvailable = (room: Room, bookings: any[], checkIn: string, checkOut: string): boolean => {
+    if (!checkIn || !checkOut) return true;
+    
+    const inMs = new Date(checkIn).getTime();
+    const outMs = new Date(checkOut).getTime();
+    
+    return !bookings.some((booking: any) => {
+        if (Number(booking.maPhong) !== Number(room.id)) return false;
+        const bIn = new Date(booking.ngayDen).getTime();
+        const bOut = new Date(booking.ngayDi).getTime();
+        return inMs < bOut && outMs > bIn;
+    });
+};
+
+// Hàm kiểm tra xem phòng có đủ sức chứa không
+const isRoomCapacitySufficient = (room: Room, guests: string): boolean => {
+    if (!guests) return true;
+    const guestCount = parseInt(guests, 10);
+    return guestCount <= room.khach;
+};
+
 export const fetchRoomsByLocation = createAsyncThunk<
     Room[],
-    number,
+    { maViTri: number; checkIn?: string; checkOut?: string; guests?: string },
     { rejectValue: string }
->("listings/fetchRoomsByLocation", async (maViTri, { rejectWithValue }) => {
+>("listings/fetchRoomsByLocation", async ({ maViTri, checkIn, checkOut, guests }, { rejectWithValue }) => {
     try {
+        // Lấy danh sách phòng theo vị trí
         const res = await api.get("/phong-thue/lay-phong-theo-vi-tri", { params: { maViTri } });
-        const content = res?.data?.content ?? [];
-        return content as Room[];
+        const rooms = res?.data?.content ?? [];
+        
+        // Nếu không có thông tin lọc, trả về tất cả phòng
+        if (!checkIn || !checkOut) {
+            return rooms.filter((room: Room) => isRoomCapacitySufficient(room, guests || ''));
+        }
+        
+        // Lấy danh sách booking để kiểm tra lịch trống
+        const bookingsRes = await api.get("/dat-phong");
+        const bookings = bookingsRes?.data?.content ?? [];
+        
+        // Lọc phòng dựa trên ngày và số khách
+        const filteredRooms = rooms.filter((room: Room) => {
+            const isAvailable = isRoomAvailable(room, bookings, checkIn, checkOut);
+            const hasCapacity = isRoomCapacitySufficient(room, guests || '');
+            return isAvailable && hasCapacity;
+        });
+        
+        return filteredRooms as Room[];
     } catch (err) {
         const error = err as AxiosError<any>;
         const data = error.response?.data as any;

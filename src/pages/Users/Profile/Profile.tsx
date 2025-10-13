@@ -4,6 +4,7 @@ import type { AppDispatch, RootState } from "../../store";
 import { fetchProfile, updateProfile } from "./slice";
 import { setAuthenticated } from "../LoginPage/slice";
 import api from "../../../services/api";
+import sessionManager from "../../../utils/session";
 
 export default function Profile() {
   const dispatch = useDispatch<AppDispatch>();
@@ -58,15 +59,25 @@ export default function Profile() {
   const [birthD, setBirthD] = useState<string>("");
 
   useEffect(() => {
-    console.log("Profile component mounted");
-    console.log("authUser:", authUser);
-    console.log("localStorage auth_user:", localStorage.getItem("auth_user"));
-    console.log("Redux profile state:", { profile, loading, error });
-    console.log("Redux login state:", loginState);
+
+    // Khôi phục authentication từ localStorage nếu Redux state bị mất
+    if (!authUser && !loginState.isAuthenticated) {
+      try {
+        const storedUser = localStorage.getItem("auth_user");
+        const isAuth = localStorage.getItem("auth_isAuthenticated") === "true";
+        if (storedUser && isAuth) {
+          const user = JSON.parse(storedUser);
+          dispatch(setAuthenticated(user));
+          // Cập nhật session activity để tránh timeout
+          sessionManager.updateLastActivity();
+        }
+      } catch (error) {
+        console.error("Lỗi khi khôi phục authentication:", error);
+      }
+    }
 
     // Only fetch profile once when component mounts
     if (!profile && !loading) {
-      console.log("Dispatching fetchProfile...");
       dispatch(fetchProfile());
     }
   }, [dispatch, profile, loading, authUser, loginState]);
@@ -78,10 +89,40 @@ export default function Profile() {
       try {
         const res = await api.get(`/dat-phong/lay-theo-nguoi-dung/${userId}`);
         const mine = (res?.data?.content ?? []) as Booking[];
-        // Invert original API order: last item should appear first
-        const inverted = [...mine].reverse();
+        
+        // Debug: Kiểm tra các booking có cùng id
+        const idGroups = mine.reduce((acc, booking) => {
+          if (!acc[booking.id]) acc[booking.id] = [];
+          acc[booking.id].push(booking);
+          return acc;
+        }, {} as Record<number, Booking[]>);
+        
+        Object.entries(idGroups).forEach(([, bookings]) => {
+          if (bookings.length > 1) {
+            // Duplicate bookings found
+          }
+        });
+        
+        // Loại bỏ các booking trùng lặp bằng Map để đảm bảo unique hoàn toàn
+        const bookingMap = new Map();
+        mine.forEach(booking => {
+          // Tạo key unique dựa trên tất cả các trường quan trọng
+          const key = `${booking.id}-${booking.maPhong}-${booking.ngayDen}-${booking.ngayDi}-${booking.maNguoiDung}`;
+          if (!bookingMap.has(key)) {
+            bookingMap.set(key, booking);
+          }
+        });
+        const uniqueBookings = Array.from(bookingMap.values());
+        
+        // Sắp xếp theo ngày tạo mới nhất trước (không cần reverse)
+        const sortedBookings = uniqueBookings.sort((a, b) => {
+          const dateA = new Date(a.ngayDen).getTime();
+          const dateB = new Date(b.ngayDen).getTime();
+          return dateB - dateA; // Mới nhất trước
+        });
+        
         const uniqueRoomIds = Array.from(
-          new Set(inverted.map((b) => b.maPhong))
+          new Set(sortedBookings.map((b) => b.maPhong))
         );
         const roomMap: Record<number, Room> = {};
         await Promise.all(
@@ -93,7 +134,7 @@ export default function Profile() {
             } catch {}
           })
         );
-        setBookings(inverted.map((b) => ({ ...b, room: roomMap[b.maPhong] })));
+        setBookings(sortedBookings.map((b) => ({ ...b, room: roomMap[b.maPhong] })));
       } finally {
         setLoadingBookings(false);
       }

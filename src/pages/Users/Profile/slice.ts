@@ -53,19 +53,26 @@ export const fetchProfile = createAsyncThunk<
                 return rejectWithValue("Chưa đăng nhập");
             }
 
-            const res = await api.get("/users");
+            // Lấy token từ localStorage hoặc Redux state
+            const token = loginUser?.token || 
+                         (typeof window !== "undefined" ? localStorage.getItem("accessToken") : "") ||
+                         "";
+
+            const res = await api.get("/users", {
+                headers: token ? { token } : {}
+            });
             const list = (res?.data?.content ?? res?.data ?? []) as any[];
             const me = list.find((u) => Number(u?.id) === Number(id)) || {};
 
             return {
                 id: Number(me?.id ?? id ?? 0),
-                name: me?.name ?? me?.hoTen ?? "",
+                name: me?.name ?? me?.hoTen ?? loginUser?.name ?? "",
                 email: me?.email ?? loginUser?.email ?? "",
                 password: me?.password,
-                phone: me?.phone ?? me?.soDT,
-                birthday: me?.birthday,
-                avatar: me?.avatar ?? me?.avatarUrl,
-                gender: me?.gender,
+                phone: me?.phone ?? me?.soDT ?? loginUser?.phone ?? loginUser?.soDT,
+                birthday: me?.birthday ?? loginUser?.birthday,
+                avatar: me?.avatar ?? me?.avatarUrl ?? loginUser?.avatar,
+                gender: me?.gender ?? loginUser?.gender,
                 createdAt: me?.createdAt,
             };
         } catch (e: any) {

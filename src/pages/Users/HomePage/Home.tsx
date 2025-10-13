@@ -100,6 +100,7 @@ export default function HomePage() {
         else if (searchData.location) params.set("city", searchData.location);
         if (searchData.checkIn) params.set("checkIn", searchData.checkIn);
         if (searchData.checkOut) params.set("checkOut", searchData.checkOut);
+        if (searchData.guests) params.set("guests", searchData.guests);
         navigate(`/listings?${params.toString()}`);
     };
 

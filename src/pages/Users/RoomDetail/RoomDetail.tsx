@@ -21,6 +21,7 @@ type LocationState = {
     city?: string;
     checkIn?: string;
     checkOut?: string;
+    guests?: string;
 };
 
 type PendingBooking = {
@@ -59,12 +60,13 @@ export default function RoomDetail() {
 
     const [checkIn, setCheckIn] = useState<string>(state?.checkIn || "");
     const [checkOut, setCheckOut] = useState<string>(state?.checkOut || "");
-    const [guests, setGuests] = useState<number>(1);
+    const [guests, setGuests] = useState<number>(state?.guests ? parseInt(state.guests, 10) : 1);
     const [conflictOpen, setConflictOpen] = useState<boolean>(false);
     const [reviews, setReviews] = useState<RoomReview[]>([]);
     const [showAllReviews, setShowAllReviews] = useState<boolean>(false);
     const [comment, setComment] = useState<string>("");
     const [rating, setRating] = useState<number>(5);
+    const [guestError, setGuestError] = useState<string>("");
 
     const nights = useMemo(() => {
         if (!checkIn || !checkOut) return 0;
@@ -73,6 +75,22 @@ export default function RoomDetail() {
         const diff = Math.ceil((outDate.getTime() - inDate.getTime()) / (1000 * 60 * 60 * 24));
         return diff > 0 ? diff : 0;
     }, [checkIn, checkOut]);
+
+    // Hàm xử lý thay đổi số lượng khách với validation
+    const handleGuestsChange = (value: number) => {
+        if (!room) return;
+        
+        if (value < 1) {
+            setGuests(1);
+            setGuestError("");
+        } else if (value > room.khach) {
+            setGuestError(`Phòng này chỉ cho phép tối đa ${room.khach} khách`);
+            setGuests(room.khach);
+        } else {
+            setGuests(value);
+            setGuestError("");
+        }
+    };
 
     const bookRoom = async (): Promise<void> => {
         if (!room || !checkIn || !checkOut || nights <= 0) return;
@@ -287,7 +305,17 @@ export default function RoomDetail() {
                                         </div>
                                         <div className="col-span-2">
                                             <label className="block text-xs text-gray-500 mb-1">Khách</label>
-                                            <input type="number" min={1} className="w-full rounded-lg border px-3 py-2" value={guests} onChange={(e) => setGuests(parseInt(e.target.value || "1", 10))} />
+                                            <input 
+                                                type="number" 
+                                                min={1} 
+                                                max={room.khach}
+                                                className={`w-full rounded-lg border px-3 py-2 ${guestError ? 'border-red-500' : ''}`} 
+                                                value={guests} 
+                                                onChange={(e) => handleGuestsChange(parseInt(e.target.value || "1", 10))} 
+                                            />
+                                            {guestError && (
+                                                <div className="text-red-500 text-xs mt-1">{guestError}</div>
+                                            )}
                                         </div>
                                     </div>
                                     <div className="mt-3 text-sm text-gray-700">
@@ -300,8 +328,15 @@ export default function RoomDetail() {
                                         )}
                                     </div>
                                     <button
-                                        className="mt-4 w-full rounded-xl bg-rose-500 py-3 text-white font-semibold hover:bg-rose-600"
+                                        className={`mt-4 w-full rounded-xl py-3 text-white font-semibold ${
+                                            guestError || guests > (room?.khach || 0) 
+                                                ? 'bg-gray-400 cursor-not-allowed' 
+                                                : 'bg-rose-500 hover:bg-rose-600'
+                                        }`}
+                                        disabled={guestError !== "" || guests > (room?.khach || 0)}
                                         onClick={async () => {
+                                            if (guestError || guests > (room?.khach || 0)) return;
+                                            
                                             if (!isAuthenticated) {
                                                 try {
                                                     if (room) {
@@ -331,101 +366,104 @@ export default function RoomDetail() {
                     </>
                 ) : null}
             </div>
-            {/* Reviews */}
-            {reviews.length > 0 && (
-                <div className="mx-auto w-full max-w-[1100px] px-4 lg:px-6 pb-12">
-                    <h3 className="text-xl font-semibold mb-4">Đánh giá của khách</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {(showAllReviews ? reviews : reviews.slice(0, 4)).map((rv) => (
-                            <div key={rv.id} className="rounded-2xl border p-4">
-                                <div className="flex items-center gap-3 mb-2">
-                                    <img src={rv.avatar || "data:image/svg+xml;utf8,<?xml version='1.0' encoding='UTF-8'?><svg xmlns='http://www.w3.org/2000/svg' width='60' height='60'><rect width='100%' height='100%' fill='%23f1f5f9'/><circle cx='30' cy='22' r='10' fill='%23cbd5e1'/><rect x='15' y='38' width='30' height='8' rx='4' fill='%23cbd5e1'/></svg>"} alt={rv.tenNguoiBinhLuan} className="h-10 w-10 rounded-full object-cover bg-slate-100" />
-                                    <div>
-                                        <div className="font-semibold">{rv.tenNguoiBinhLuan}</div>
-                                        <div className="text-xs text-gray-500">{new Date(rv.ngayBinhLuan).toLocaleDateString()}</div>
+            {/* Reviews and Comments Section */}
+            <div className="mx-auto w-full max-w-[1100px] px-4 lg:px-6 pb-12">
+                {/* Reviews Section - chỉ hiển thị khi có reviews */}
+                {reviews.length > 0 && (
+                    <>
+                        <h3 className="text-xl font-semibold mb-4">Đánh giá của khách</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {(showAllReviews ? reviews : reviews.slice(0, 4)).map((rv) => (
+                                <div key={rv.id} className="rounded-2xl border p-4">
+                                    <div className="flex items-center gap-3 mb-2">
+                                        <img src={rv.avatar || "data:image/svg+xml;utf8,<?xml version='1.0' encoding='UTF-8'?><svg xmlns='http://www.w3.org/2000/svg' width='60' height='60'><rect width='100%' height='100%' fill='%23f1f5f9'/><circle cx='30' cy='22' r='10' fill='%23cbd5e1'/><rect x='15' y='38' width='30' height='8' rx='4' fill='%23cbd5e1'/></svg>"} alt={rv.tenNguoiBinhLuan} className="h-10 w-10 rounded-full object-cover bg-slate-100" />
+                                        <div>
+                                            <div className="font-semibold">{rv.tenNguoiBinhLuan}</div>
+                                            <div className="text-xs text-gray-500">{new Date(rv.ngayBinhLuan).toLocaleDateString()}</div>
+                                        </div>
                                     </div>
+                                    <div className="text-yellow-500 mb-2">{"★".repeat(rv.saoBinhLuan)}{"☆".repeat(Math.max(0, 5 - rv.saoBinhLuan))}</div>
+                                    <div className="text-sm text-gray-700 whitespace-pre-wrap break-all break-words">{rv.noiDung}</div>
                                 </div>
-                                <div className="text-yellow-500 mb-2">{"★".repeat(rv.saoBinhLuan)}{"☆".repeat(Math.max(0, 5 - rv.saoBinhLuan))}</div>
-                                <div className="text-sm text-gray-700 whitespace-pre-wrap break-all break-words">{rv.noiDung}</div>
-                            </div>
-                        ))}
-                    </div>
-                    {reviews.length > 4 && (
-                        <div className="mt-4 text-center">
-                            <button
-                                className="inline-flex items-center rounded-full border px-4 py-2 text-sm hover:bg-black/5"
-                                onClick={() => setShowAllReviews((v) => !v)}
-                            >
-                                {showAllReviews ? "Ẩn bớt" : "Hiển thị thêm"}
-                            </button>
+                            ))}
                         </div>
-                    )}
+                        {reviews.length > 4 && (
+                            <div className="mt-4 text-center">
+                                <button
+                                    className="inline-flex items-center rounded-full border px-4 py-2 text-sm hover:bg-black/5"
+                                    onClick={() => setShowAllReviews((v) => !v)}
+                                >
+                                    {showAllReviews ? "Ẩn bớt" : "Hiển thị thêm"}
+                                </button>
+                            </div>
+                        )}
+                    </>
+                )}
 
-                    {/* Add comment */}
-                    <div className="mt-8">
-                        <h4 className="font-medium mb-2">Thêm bình luận</h4>
-                        <div className="flex items-start gap-3">
-                            <img src={(user?.avatar || "data:image/svg+xml;utf8,<?xml version='1.0' encoding='UTF-8'?><svg xmlns='http://www.w3.org/2000/svg' width='40' height='40'><rect width='100%' height='100%' fill='%23f1f5f9'/><circle cx='20' cy='14' r='7' fill='%23cbd5e1'/><rect x='8' y='26' width='24' height='6' rx='3' fill='%23cbd5e1'/></svg>") as string} alt="avatar" className="h-10 w-10 rounded-full object-cover bg-slate-100" />
-                            <div className="flex-1">
-                                <textarea
-                                    value={comment}
-                                    onChange={(e) => setComment(e.target.value)}
-                                    rows={4}
-                                    className="w-full rounded-xl border px-3 py-2 min-h-[140px]"
-                                    placeholder="Chia sẻ trải nghiệm của bạn..."
-                                />
-                                <div className="mt-2 flex items-center justify-between">
-                                    <div className="text-sm">
-                                        <span className="mr-2">Đánh giá:</span>
-                                        {[1, 2, 3, 4, 5].map((n) => (
-                                            <button key={n} type="button" className={`mx-0.5 ${rating >= n ? 'text-yellow-500' : 'text-gray-300'}`} onClick={() => setRating(n)}>★</button>
-                                        ))}
-                                    </div>
-                                    <button
-                                        className="rounded-lg bg-rose-500 px-4 py-2 text-white hover:bg-rose-600 text-sm"
-                                        onClick={async () => {
-                                            if (!isAuthenticated) {
-                                                try {
-                                                    localStorage.setItem('pendingComment', JSON.stringify({ roomId: Number(id), content: comment.trim(), rating }));
-                                                } catch { }
-                                                navigate(`/dangnhap?redirect=${encodeURIComponent(window.location.pathname + window.location.search)}`);
-                                                return;
-                                            }
-                                            if (!comment.trim() || !id) return;
-                                            try {
-                                                await api.post('/binh-luan', {
-                                                    id: 0,
-                                                    maPhong: Number(id),
-                                                    maNguoiBinhLuan: (user?.id ?? user?._id ?? user?.userId ?? 0),
-                                                    ngayBinhLuan: new Date().toISOString(),
-                                                    noiDung: comment.trim(),
-                                                    saoBinhLuan: rating,
-                                                }, { headers: { token: (user?.token || user?.accessToken || '') } });
-                                                setComment("");
-                                                const res = await api.get(`/binh-luan/lay-binh-luan-theo-phong/${id}`);
-                                                const list = (res?.data?.content ?? []) as any[];
-                                                const parsed: RoomReview[] = list.map((r: any) => ({
-                                                    id: r.id,
-                                                    ngayBinhLuan: r.ngayBinhLuan,
-                                                    noiDung: r.noiDung,
-                                                    saoBinhLuan: Number(r.saoBinhLuan ?? 0),
-                                                    tenNguoiBinhLuan: r.tenNguoiBinhLuan,
-                                                    avatar: r.avatar,
-                                                })).sort((a, b) => new Date(b.ngayBinhLuan).getTime() - new Date(a.ngayBinhLuan).getTime());
-                                                setReviews(parsed);
-                                            } catch (e: any) {
-                                                alert(e?.response?.data?.message || e?.message || 'Gửi bình luận thất bại');
-                                            }
-                                        }}
-                                    >
-                                        Gửi bình luận
-                                    </button>
+                {/* Add comment section - luôn hiển thị */}
+                <div className={`${reviews.length > 0 ? 'mt-8' : ''}`}>
+                    <h4 className="font-medium mb-2">Thêm bình luận</h4>
+                    <div className="flex items-start gap-3">
+                        <img src={(user?.avatar || "data:image/svg+xml;utf8,<?xml version='1.0' encoding='UTF-8'?><svg xmlns='http://www.w3.org/2000/svg' width='40' height='40'><rect width='100%' height='100%' fill='%23f1f5f9'/><circle cx='20' cy='14' r='7' fill='%23cbd5e1'/><rect x='8' y='26' width='24' height='6' rx='3' fill='%23cbd5e1'/></svg>") as string} alt="avatar" className="h-10 w-10 rounded-full object-cover bg-slate-100" />
+                        <div className="flex-1">
+                            <textarea
+                                value={comment}
+                                onChange={(e) => setComment(e.target.value)}
+                                rows={4}
+                                className="w-full rounded-xl border px-3 py-2 min-h-[140px]"
+                                placeholder="Chia sẻ trải nghiệm của bạn..."
+                            />
+                            <div className="mt-2 flex items-center justify-between">
+                                <div className="text-sm">
+                                    <span className="mr-2">Đánh giá:</span>
+                                    {[1, 2, 3, 4, 5].map((n) => (
+                                        <button key={n} type="button" className={`mx-0.5 ${rating >= n ? 'text-yellow-500' : 'text-gray-300'}`} onClick={() => setRating(n)}>★</button>
+                                    ))}
                                 </div>
+                                <button
+                                    className="rounded-lg bg-rose-500 px-4 py-2 text-white hover:bg-rose-600 text-sm"
+                                    onClick={async () => {
+                                        if (!isAuthenticated) {
+                                            try {
+                                                localStorage.setItem('pendingComment', JSON.stringify({ roomId: Number(id), content: comment.trim(), rating }));
+                                            } catch { }
+                                            navigate(`/dangnhap?redirect=${encodeURIComponent(window.location.pathname + window.location.search)}`);
+                                            return;
+                                        }
+                                        if (!comment.trim() || !id) return;
+                                        try {
+                                            await api.post('/binh-luan', {
+                                                id: 0,
+                                                maPhong: Number(id),
+                                                maNguoiBinhLuan: (user?.id ?? user?._id ?? user?.userId ?? 0),
+                                                ngayBinhLuan: new Date().toISOString(),
+                                                noiDung: comment.trim(),
+                                                saoBinhLuan: rating,
+                                            }, { headers: { token: (user?.token || user?.accessToken || '') } });
+                                            setComment("");
+                                            const res = await api.get(`/binh-luan/lay-binh-luan-theo-phong/${id}`);
+                                            const list = (res?.data?.content ?? []) as any[];
+                                            const parsed: RoomReview[] = list.map((r: any) => ({
+                                                id: r.id,
+                                                ngayBinhLuan: r.ngayBinhLuan,
+                                                noiDung: r.noiDung,
+                                                saoBinhLuan: Number(r.saoBinhLuan ?? 0),
+                                                tenNguoiBinhLuan: r.tenNguoiBinhLuan,
+                                                avatar: r.avatar,
+                                            })).sort((a, b) => new Date(b.ngayBinhLuan).getTime() - new Date(a.ngayBinhLuan).getTime());
+                                            setReviews(parsed);
+                                        } catch (e: any) {
+                                            alert(e?.response?.data?.message || e?.message || 'Gửi bình luận thất bại');
+                                        }
+                                    }}
+                                >
+                                    Gửi bình luận
+                                </button>
                             </div>
                         </div>
                     </div>
                 </div>
-            )}
+            </div>
             {
                 conflictOpen ? (
                     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">

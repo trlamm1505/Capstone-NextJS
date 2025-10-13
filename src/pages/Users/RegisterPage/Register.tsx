@@ -56,8 +56,7 @@ function Register() {
     // Debug logging for error
     useEffect(() => {
         if (error) {
-            console.log('Register component - Error received:', error);
-            console.log('Register component - Error type:', typeof error);
+            // Handle error
         }
     }, [error]);
 
